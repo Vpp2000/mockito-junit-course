@@ -8,8 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Captor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
@@ -31,11 +33,16 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -300,5 +307,27 @@ class ExamServiceImplTest {
         verify(questionRepo).findQuestionsByExamId(anyLong());
     }
 
+    @Test
+    @DisplayName("Test order of method execution")
+    void test_order_method_execution(){
+        when(repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+
+        service.findExamByNameWithQuestions("Programming");
+        service.findExamByNameWithQuestions("History");
+
+        InOrder inOrder = inOrder(repository, questionRepository);
+        inOrder.verify(repository).findAll();
+        inOrder.verify(questionRepository).findQuestionsByExamId(0L);
+        inOrder.verify(repository).findAll();
+        inOrder.verify(questionRepository).findQuestionsByExamId(2L);
+
+        verify(repository, times(2)).findAll();
+        verify(repository, atLeast(1)).findAll();
+        verify(repository, atLeastOnce()).findAll();
+        verify(repository, atMost(15)).findAll();
+
+
+
+    }
 
 }
