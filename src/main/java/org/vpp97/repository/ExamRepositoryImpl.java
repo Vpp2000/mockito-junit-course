@@ -10,7 +10,7 @@ public class ExamRepositoryImpl implements ExamRepository{
     @Override
     public List<Exam> findAll() {
         System.out.println("Find all");
-        return Arrays.asList(new Exam(1L, "Math"), new Exam(2L, "History"), new Exam(3L, "Chemistry"));
+        return Arrays.asList(new Exam(0L, "Programming"),new Exam(1L, "Math"), new Exam(2L, "History"), new Exam(3L, "Chemistry"));
     }
 
     @Override

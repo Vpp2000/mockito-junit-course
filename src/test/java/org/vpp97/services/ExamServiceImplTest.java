@@ -33,7 +33,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -278,6 +280,24 @@ class ExamServiceImplTest {
             assertEquals(0L,exam.getId());
             assertEquals("Programming", exam.getName());
         }
+    }
+
+    @Test
+    @DisplayName("Test using spies")
+    void test_using_spies(){
+        ExamRepository examRepository = spy(ExamRepositoryImpl.class);
+        QuestionRepository questionRepo = spy(QuestionRepositoryImpl.class);
+        ExamService examService = new ExamServiceImpl(examRepository, questionRepo);
+
+        doReturn(DataTest.QUESTION_LIST).when(questionRepo).findQuestionsByExamId(anyLong());
+
+        Exam exam = examService.findExamByNameWithQuestions("Programming");
+        assertNotNull(exam);
+        assertEquals("Programming", exam.getName());
+        assertTrue(!exam.getQuestions().isEmpty());
+
+        verify(examRepository).findAll();
+        verify(questionRepo).findQuestionsByExamId(anyLong());
     }
 
 
