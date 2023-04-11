@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.Mockito;
+import org.vpp97.data.Data;
 import org.vpp97.models.Exam;
 import org.vpp97.repository.ExamRepository;
 import org.vpp97.repository.ExamRepositoryImpl;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 class ExamServiceImplTest {
@@ -32,7 +34,7 @@ class ExamServiceImplTest {
     @Test
     @DisplayName("Test find exam by name")
     void find_exam_by_name() {
-        List<Exam> exams = Arrays.asList(new Exam(0L, "Programming"), new Exam(2L, "History"), new Exam(3L, "Chemistry"));
+        List<Exam> exams = Data.EXAM_LIST;
 
         when(this.repository.findAll()).thenReturn(exams);
 
@@ -57,6 +59,17 @@ class ExamServiceImplTest {
         Optional<Exam> examOptional = this.service.findExamByName("Programming");
 
         assertFalse(examOptional.isPresent());
+    }
+
+    @Test
+    @DisplayName("Test find exam with questions included")
+    void find_exam_with_questions(){
+        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST);
+        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST);
+        Exam exam = service.findExamByNameWithQuestions("Programming");
+
+        assertEquals(3, exam.getQuestions().size());
+        assertTrue(exam.getQuestions().contains("LIMITS"));
     }
 
 
