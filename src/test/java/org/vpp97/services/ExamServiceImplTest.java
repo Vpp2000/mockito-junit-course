@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ExamServiceImplTest {
@@ -70,6 +71,19 @@ class ExamServiceImplTest {
 
         assertEquals(3, exam.getQuestions().size());
         assertTrue(exam.getQuestions().contains("LIMITS"));
+
+        verify(repository).findAll();
+        verify(questionRepository).findQuestionsByExamId(0L);
+    }
+
+    @Test
+    @DisplayName("Test find exam with questions included but course doesnt exist")
+    void find_non_existent_exam_with_questions(){
+        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST);
+        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST);
+        Exam exam = service.findExamByNameWithQuestions("Anatomy");
+        assertNull(exam);
+        // verify(questionRepository).findQuestionsByExamId(anyLong());  ERROR, WANTED BUT NOT INVOKED
     }
 
 
