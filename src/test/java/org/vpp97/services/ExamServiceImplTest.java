@@ -34,6 +34,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -203,6 +205,71 @@ class ExamServiceImplTest {
         verify(questionRepository).findQuestionsByExamId(longCaptor.capture());
 
         assertEquals(0L, longCaptor.getValue());
+    }
+
+    @Nested
+    class DoMethodsTesting {
+        @Test
+        @DisplayName("Test do throw")
+        void test_do_throw() {
+            Exam exam = Data.EXAM;
+            exam.setQuestions(Data.QUESTION_LIST);
+            doThrow(IllegalArgumentException.class).when(questionRepository).saveMany(anyList());
+            assertThrows(IllegalArgumentException.class, () -> {
+               service.save(exam);
+            });
+        }
+    }
+    @Nested
+    class DoAnswerTesting {
+        @Test
+        @DisplayName("Test do answer")
+        void test_do_answer() {
+            when(repository.findAll()).thenReturn(Data.EXAM_LIST);
+
+            //when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+            doAnswer(invocationOnMock -> {
+                Long examId = invocationOnMock.getArgument(0);
+                List<String> questions = examId == 0L ? Data.QUESTION_LIST : Collections.emptyList();
+                return questions;
+            }).when(questionRepository).findQuestionsByExamId(anyLong());
+
+            Exam exam = service.findExamByNameWithQuestions("Programming");
+
+            assertEquals(0L, exam.getId());
+            assertNotNull(exam.getQuestions());
+
+            verify(questionRepository).findQuestionsByExamId(anyLong());
+
+        }
+
+        @Test
+        @DisplayName("Test saving exam method")
+        void save_exam(){
+
+            // GIVEN
+            Exam newExam = Data.EXAM;
+            newExam.setQuestions(Data.QUESTION_LIST);
+
+            //WHEN
+            doAnswer(new Answer<Exam>() {
+                Long sequence = 8L;
+                @Override
+                public Exam answer(InvocationOnMock invocationOnMock) throws Throwable {
+                    Exam exam = invocationOnMock.getArgument(0);
+                    exam.setId(sequence++);
+                    return exam;
+                }
+            }).when(repository).save(any(Exam.class));
+
+            // THEN
+            Exam exam = service.save(newExam);
+            assertNotNull(exam.getId());
+            assertEquals(8L, exam.getId());
+
+            verify(repository).save(any(Exam.class));
+            verify(questionRepository).saveMany(anyList());
+        }
     }
 
 
