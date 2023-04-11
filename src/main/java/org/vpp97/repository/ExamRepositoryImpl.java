@@ -10,4 +10,9 @@ public class ExamRepositoryImpl implements ExamRepository{
     public List<Exam> findAll() {
         return Arrays.asList(new Exam(1L, "Math"), new Exam(2L, "History"), new Exam(3L, "Chemistry"));
     }
+
+    @Override
+    public Exam save(Exam exam) {
+        return null;
+    }
 }
