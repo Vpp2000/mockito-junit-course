@@ -2,9 +2,13 @@ package org.vpp97.services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -27,6 +31,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +45,8 @@ class ExamServiceImplTest {
     private QuestionRepository questionRepository;
     @InjectMocks  // same as new ExamServiceImpl(this.repository, this.questionRepository);
     private ExamServiceImpl service;
+    @Captor
+    private ArgumentCaptor<Long> longCaptor;
 
     @BeforeEach
     void setupTestCases(){
@@ -127,6 +136,73 @@ class ExamServiceImplTest {
 
         verify(this.repository).save(any(Exam.class));
         verify(this.questionRepository).saveMany(anyList());
+    }
+
+    @Test
+    void test_exception_management(){
+        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST_IDS_NULL);
+        when(this.questionRepository.findQuestionsByExamId(isNull())).thenThrow(IllegalArgumentException.class);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            this.service.findExamByNameWithQuestions("Programming");
+        });
+
+        assertEquals(IllegalArgumentException.class, exception.getClass());
+        verify(this.repository).findAll();
+        verify(this.questionRepository).findQuestionsByExamId(isNull());
+    }
+
+
+    @Test
+    void test_with_arg_matchers() {
+        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST);
+        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+        this.service.findExamByNameWithQuestions("Programming");
+
+        verify(this.repository).findAll();
+        verify(this.questionRepository).findQuestionsByExamId(argThat(
+                        arg -> arg != null && arg == 0L
+                )
+        );
+    }
+
+    @Nested
+    class CustomArgsMatcher implements ArgumentMatcher<Long> {
+        private Long argument;
+        @Override
+        public boolean matches(Long argument) {
+            this.argument = argument;
+            return argument != null && argument >= 0L;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Custom message from CustomArgsMatcher on error. \n Argument with value %s must be a positive number or zero, but non negative", argument);
+        }
+
+
+        @Test
+        void test_with_arg_matchers_inner_class() {
+            //when(repository.findAll()).thenReturn(Data.EXAM_LIST_IDS_NEGATIVE);
+            when(repository.findAll()).thenReturn(Data.EXAM_LIST);
+            when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+            service.findExamByNameWithQuestions("Programming");
+
+            verify(repository).findAll();
+            verify(questionRepository).findQuestionsByExamId(argThat(new CustomArgsMatcher())
+            );
+        }
+    }
+
+    @Test
+    @DisplayName("Test with argument captor")
+    void test_with_arg_captor() {
+        when(repository.findAll()).thenReturn(Data.EXAM_LIST);
+        // ITS NOT NECESSARY FOR THIS STUF when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+        service.findExamByNameWithQuestions("Programming");
+        verify(repository).findAll();
+        verify(questionRepository).findQuestionsByExamId(longCaptor.capture());
+
+        assertEquals(0L, longCaptor.getValue());
     }
 
 
