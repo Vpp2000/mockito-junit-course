@@ -5,24 +5,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
-import org.vpp97.data.Data;
+import org.vpp97.data.DataTest;
 import org.vpp97.models.Exam;
 import org.vpp97.repository.ExamRepository;
 import org.vpp97.repository.ExamRepositoryImpl;
 import org.vpp97.repository.QuestionRepository;
+import org.vpp97.repository.QuestionRepositoryImpl;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +32,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,9 +40,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)  // same as MockitoAnnotations.openMocks(this);
 class ExamServiceImplTest {
     @Mock   // same as Mockito.mock
-    private ExamRepository repository;
+    private ExamRepositoryImpl repository;
     @Mock  // same as Mockito.mock
-    private QuestionRepository questionRepository;
+    private QuestionRepositoryImpl questionRepository;
     @InjectMocks  // same as new ExamServiceImpl(this.repository, this.questionRepository);
     private ExamServiceImpl service;
     @Captor
@@ -61,7 +59,7 @@ class ExamServiceImplTest {
     @Test
     @DisplayName("Test find exam by name")
     void find_exam_by_name() {
-        List<Exam> exams = Data.EXAM_LIST;
+        List<Exam> exams = DataTest.EXAM_LIST;
 
         when(this.repository.findAll()).thenReturn(exams);
 
@@ -91,8 +89,8 @@ class ExamServiceImplTest {
     @Test
     @DisplayName("Test find exam with questions included")
     void find_exam_with_questions(){
-        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST);
-        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST);
+        when(this.repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(DataTest.QUESTION_LIST);
         Exam exam = service.findExamByNameWithQuestions("Programming");
 
         assertEquals(3, exam.getQuestions().size());
@@ -105,8 +103,8 @@ class ExamServiceImplTest {
     @Test
     @DisplayName("Test find exam with questions included but course doesnt exist")
     void find_non_existent_exam_with_questions(){
-        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST);
-        //when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+        when(this.repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+        //when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(DataTest.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
         Exam exam = service.findExamByNameWithQuestions("Anatomy");
         assertNull(exam);
         // verify(questionRepository).findQuestionsByExamId(anyLong());  ERROR, WANTED BUT NOT INVOKED
@@ -117,8 +115,8 @@ class ExamServiceImplTest {
     void save_exam(){
 
         // GIVEN
-        Exam newExam = Data.EXAM;
-        newExam.setQuestions(Data.QUESTION_LIST);
+        Exam newExam = DataTest.EXAM;
+        newExam.setQuestions(DataTest.QUESTION_LIST);
 
         //WHEN
         when(this.repository.save(any(Exam.class))).then(new Answer<Exam>() {
@@ -142,7 +140,7 @@ class ExamServiceImplTest {
 
     @Test
     void test_exception_management(){
-        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST_IDS_NULL);
+        when(this.repository.findAll()).thenReturn(DataTest.EXAM_LIST_IDS_NULL);
         when(this.questionRepository.findQuestionsByExamId(isNull())).thenThrow(IllegalArgumentException.class);
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             this.service.findExamByNameWithQuestions("Programming");
@@ -156,8 +154,8 @@ class ExamServiceImplTest {
 
     @Test
     void test_with_arg_matchers() {
-        when(this.repository.findAll()).thenReturn(Data.EXAM_LIST);
-        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+        when(this.repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+        when(this.questionRepository.findQuestionsByExamId(anyLong())).thenReturn(DataTest.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
         this.service.findExamByNameWithQuestions("Programming");
 
         verify(this.repository).findAll();
@@ -184,9 +182,9 @@ class ExamServiceImplTest {
 
         @Test
         void test_with_arg_matchers_inner_class() {
-            //when(repository.findAll()).thenReturn(Data.EXAM_LIST_IDS_NEGATIVE);
-            when(repository.findAll()).thenReturn(Data.EXAM_LIST);
-            when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+            //when(repository.findAll()).thenReturn(DataTest.EXAM_LIST_IDS_NEGATIVE);
+            when(repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+            when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(DataTest.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
             service.findExamByNameWithQuestions("Programming");
 
             verify(repository).findAll();
@@ -198,8 +196,8 @@ class ExamServiceImplTest {
     @Test
     @DisplayName("Test with argument captor")
     void test_with_arg_captor() {
-        when(repository.findAll()).thenReturn(Data.EXAM_LIST);
-        // ITS NOT NECESSARY FOR THIS STUF when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+        when(repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+        // ITS NOT NECESSARY FOR THIS STUF when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(DataTest.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
         service.findExamByNameWithQuestions("Programming");
         verify(repository).findAll();
         verify(questionRepository).findQuestionsByExamId(longCaptor.capture());
@@ -212,8 +210,8 @@ class ExamServiceImplTest {
         @Test
         @DisplayName("Test do throw")
         void test_do_throw() {
-            Exam exam = Data.EXAM;
-            exam.setQuestions(Data.QUESTION_LIST);
+            Exam exam = DataTest.EXAM;
+            exam.setQuestions(DataTest.QUESTION_LIST);
             doThrow(IllegalArgumentException.class).when(questionRepository).saveMany(anyList());
             assertThrows(IllegalArgumentException.class, () -> {
                service.save(exam);
@@ -221,16 +219,16 @@ class ExamServiceImplTest {
         }
     }
     @Nested
-    class DoAnswerTesting {
+    class DoSomethingTesting {
         @Test
         @DisplayName("Test do answer")
         void test_do_answer() {
-            when(repository.findAll()).thenReturn(Data.EXAM_LIST);
+            when(repository.findAll()).thenReturn(DataTest.EXAM_LIST);
 
-            //when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(Data.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
+            //when(questionRepository.findQuestionsByExamId(anyLong())).thenReturn(DataTest.QUESTION_LIST); // ERROR, UNNECESSARY STUBBING DETECTED
             doAnswer(invocationOnMock -> {
                 Long examId = invocationOnMock.getArgument(0);
-                List<String> questions = examId == 0L ? Data.QUESTION_LIST : Collections.emptyList();
+                List<String> questions = examId == 0L ? DataTest.QUESTION_LIST : Collections.emptyList();
                 return questions;
             }).when(questionRepository).findQuestionsByExamId(anyLong());
 
@@ -248,8 +246,8 @@ class ExamServiceImplTest {
         void save_exam(){
 
             // GIVEN
-            Exam newExam = Data.EXAM;
-            newExam.setQuestions(Data.QUESTION_LIST);
+            Exam newExam = DataTest.EXAM;
+            newExam.setQuestions(DataTest.QUESTION_LIST);
 
             //WHEN
             doAnswer(new Answer<Exam>() {
@@ -269,6 +267,16 @@ class ExamServiceImplTest {
 
             verify(repository).save(any(Exam.class));
             verify(questionRepository).saveMany(anyList());
+        }
+
+        @Test
+        @DisplayName("Test using real methods")
+        void test_real_methods(){
+            when(repository.findAll()).thenReturn(DataTest.EXAM_LIST);
+            doCallRealMethod().when(questionRepository).findQuestionsByExamId(anyLong());
+            Exam exam = service.findExamByNameWithQuestions("Programming");
+            assertEquals(0L,exam.getId());
+            assertEquals("Programming", exam.getName());
         }
     }
 

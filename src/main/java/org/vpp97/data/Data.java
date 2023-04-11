@@ -33,8 +33,4 @@ public class Data {
     );
 
     public static final Exam EXAM = new Exam(null, "Gym");
-    //public static final Exam EXAM = Exam.builder()
-     //       .id(8L)
-       //     .name("Gym")
-         //   .build();
 }
